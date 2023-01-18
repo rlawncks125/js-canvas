@@ -1,7 +1,7 @@
 <template>
-  <!-- https://www.youtube.com/watch?v=vAJEHf92tV0&list=PLYElE_rzEw_t0--arG7_fu1uqkwOht1Jg -->
   <div>
-    <canvas ref="canvasRef" class="absolute w-[100vw] h-[100vh] mx-auto">
+    <button @click="cahngeImage">체인지</button>
+    <canvas ref="canvasRef" class="w-[80vw] h-[80vh] mx-auto">
       <img
         class="hidden"
         ref="imagRef"
@@ -9,13 +9,12 @@
         alt=""
       />
     </canvas>
-    <button class="absolute z-40 bg-white border" @click="clickWrapBtn">
-      wrap
-    </button>
   </div>
 </template>
 
 <script setup lang="ts">
+import { readerUploadImageURLByBase64 } from "@/common/image";
+
 const canvasRef = ref<HTMLCanvasElement>();
 const imagRef = ref<HTMLImageElement>();
 
@@ -31,14 +30,7 @@ class Particle {
   vy = 0;
   originX = 0;
   originY = 0;
-  ease = 0.5;
-  // 마우스 감지
-  friction = 0.98;
-  dx = 0;
-  dy = 0;
-  distance = 0;
-  force = 0;
-  angle = 0;
+  ease = 0.7;
 
   constructor(
     public effect: Effect,
@@ -48,6 +40,8 @@ class Particle {
   ) {
     this.x = Math.random() * this.effect.width;
     this.y = Math.random() * this.effect.hegiht;
+    // this.x = _x;
+    // this.y = _y;
     this.originX = Math.floor(_x);
     this.originY = Math.floor(_y);
     this.size = this.effect.gap;
@@ -58,29 +52,16 @@ class Particle {
     context.fillRect(this.x, this.y, this.size, this.size);
   }
   update() {
-    // 마우스 감지
-    this.dx = this.effect.mouse.x! - this.x;
-    this.dy = this.effect.mouse.y! - this.y;
-
-    this.distance = this.dx * this.dx + this.dy * this.dy;
-    this.force = -this.effect.mouse.radius / this.distance;
-
-    if (this.distance < this.effect.mouse.radius) {
-      this.angle = Math.atan2(this.dy, this.dx);
-      this.vx += this.force * Math.cos(this.angle);
-      this.vy += this.force * Math.sin(this.angle);
-    }
-
     // 위치 업데이트
-    this.x += this.vx * this.friction + (this.originX - this.x) * this.ease;
-    this.y += this.vy * this.friction + (this.originY - this.y) * this.ease;
+    this.x += (this.originX - this.x) * this.ease;
+    this.y += (this.originY - this.y) * this.ease;
   }
   wrap() {
     this.x = Math.random() * this.effect.width;
     this.y = Math.random() * this.effect.hegiht;
     this.vx = 0;
     this.vy = 0;
-    this.ease = 0.08;
+    // this.ease = 0.08;
   }
 }
 
@@ -93,11 +74,6 @@ class Effect {
   x = 0;
   y = 0;
   gap = 1;
-  mouse = {
-    radius: 300,
-    x: undefined as number | undefined,
-    y: undefined as number | undefined,
-  };
 
   constructor(
     public canvas: HTMLCanvasElement,
@@ -108,19 +84,13 @@ class Effect {
     this.centerX = this.width * 0.5;
     this.centerY = this.hegiht * 0.5;
     this.x = this.centerX - this.image.width * 0.5;
-    this.y = this.centerY - this.image.height * 0.5;
-
-    // 마우스 감지
-    window.addEventListener("mousemove", (event: any) => {
-      const _sx = canvas.clientWidth / this.width;
-      const _sy = canvas.clientHeight / this.hegiht;
-
-      this.mouse.x = +event.x / _sx;
-      this.mouse.y = +event.y / _sy;
-    });
+    this.y = this.centerY - this.image.height * 0.9;
   }
 
   init(context: CanvasRenderingContext2D) {
+    this.particlesArray.length = 0;
+    ctx.clearRect(0, 0, this.width, this.hegiht);
+
     context.drawImage(this.image, this.x, this.y);
     // 캔버스 이미지 정보 데이터화
     const pixels = context.getImageData(0, 0, this.width, this.hegiht).data;
@@ -153,28 +123,42 @@ class Effect {
   }
 }
 
-const clickWrapBtn = () => {
-  effect.wrap();
-};
-
 onMounted(() => {
   if (!canvasRef.value) return;
   if (!imagRef.value) return;
+  canvasRef.value.width = canvasRef.value.clientWidth;
+  canvasRef.value.height = canvasRef.value.clientHeight;
 
-  ctx = canvasRef.value.getContext("2d")!;
+  ctx = canvasRef.value.getContext("2d", {
+    willReadFrequently: true,
+  })!;
 
   effect = new Effect(canvasRef.value, imagRef.value);
 
   effect.init(ctx);
-  // console.log(canvasRef.value.clientWidth, canvasRef.value.clientHeight);
-  // console.log(effect);
-  // console.log(imagRef.value.width, imagRef.value.height);
+
+  console.log(effect);
   animate();
 });
 
 onUnmounted(() => {
   cancelAnimationFrame(aniFrameIndex);
 });
+
+const cahngeImage = async () => {
+  if (!canvasRef.value) return;
+  if (!imagRef.value) return;
+
+  const imageData = await readerUploadImageURLByBase64(
+    "https://res.cloudinary.com/dhdq4v4ar/image/upload/v1668551633/back-Portfolio/zc0ogw548s7yn1lxxiig.png"
+  );
+
+  imagRef.value.src = imageData + "";
+
+  effect.init(ctx);
+
+  console.log(effect);
+};
 
 function animate() {
   if (!canvasRef.value) return;
