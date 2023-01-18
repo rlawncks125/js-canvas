@@ -48,7 +48,9 @@ const cahngeImage = async () => {
 
   imagRef.value.src = imageData + "";
 
-  effect.init(ctx);
+  setTimeout(() => {
+    effect.init(ctx);
+  }, 0);
 
   // console.log(effect);
 };

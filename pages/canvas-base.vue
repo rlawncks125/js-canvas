@@ -13,7 +13,7 @@
 </template>
 
 <script setup lang="ts">
-import { readerUploadImageURLByBase64 } from "@/common/image";
+import { baseImage1, readerUploadImageURLByBase64 } from "@/common/image";
 
 const canvasRef = ref<HTMLCanvasElement>();
 const imagRef = ref<HTMLImageElement>();
@@ -21,6 +21,21 @@ const imagRef = ref<HTMLImageElement>();
 let ctx: CanvasRenderingContext2D;
 let effect: Effect;
 let aniFrameIndex: number;
+
+const cahngeImage = async () => {
+  if (!canvasRef.value) return;
+  if (!imagRef.value) return;
+
+  const imageData = await readerUploadImageURLByBase64(baseImage1);
+
+  imagRef.value.src = imageData + "";
+
+  setTimeout(() => {
+    effect.init(ctx);
+  }, 0);
+
+  // console.log(effect);
+};
 
 class Particle {
   x = 0;
@@ -88,6 +103,7 @@ class Effect {
   }
 
   init(context: CanvasRenderingContext2D) {
+    console.log("Effect init");
     this.particlesArray.length = 0;
     ctx.clearRect(0, 0, this.width, this.hegiht);
 
@@ -137,28 +153,12 @@ onMounted(() => {
 
   effect.init(ctx);
 
-  console.log(effect);
   animate();
 });
 
 onUnmounted(() => {
   cancelAnimationFrame(aniFrameIndex);
 });
-
-const cahngeImage = async () => {
-  if (!canvasRef.value) return;
-  if (!imagRef.value) return;
-
-  const imageData = await readerUploadImageURLByBase64(
-    "https://res.cloudinary.com/dhdq4v4ar/image/upload/v1668551633/back-Portfolio/zc0ogw548s7yn1lxxiig.png"
-  );
-
-  imagRef.value.src = imageData + "";
-
-  effect.init(ctx);
-
-  console.log(effect);
-};
 
 function animate() {
   if (!canvasRef.value) return;
